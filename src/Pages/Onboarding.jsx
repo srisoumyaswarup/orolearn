@@ -13,8 +13,6 @@ const Icons = {
 function Onboarding() {
   const navigate = useNavigate();
   const [role, setRole] = useState('student');
-  const [authMode, setAuthMode] = useState('password'); 
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorText, setErrorText] = useState('');
@@ -32,17 +30,15 @@ function Onboarding() {
       }
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [role]);
 
   const routeUserContext = async (user) => {
-    // Look for existing user row across profiles
     const { data: student } = await supabase.from('students').select('*').eq('id', user.id).single();
     if (student) return navigate('/home');
 
     const { data: educator } = await supabase.from('educators').select('*').eq('id', user.id).single();
     if (educator) return navigate('/home');
 
-    // Route to setup wizard if profile is uncommitted
     const destination = role === 'educator' ? '/educator-setup' : '/student-setup';
     navigate(destination, { state: { uid: user.id, email: user.email, fullName: user.user_metadata?.full_name || '' } });
   };
@@ -50,9 +46,13 @@ function Onboarding() {
   const handleOAuth = async (provider) => {
     setErrorText('');
     try {
+      const targetRedirectUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:5173/onboarding'
+        : `${window.location.origin}/onboarding`;
+
       const { error } = await supabase.auth.signInWithOAuth({ 
         provider,
-        options: { redirectTo: window.location.origin + '/onboarding' }
+        options: { redirectTo: targetRedirectUrl }
       });
       if (error) throw error;
     } catch (err) {
@@ -63,19 +63,12 @@ function Onboarding() {
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
     setErrorText('');
-
     try {
-      if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        if (data.user) await routeUserContext(data.user);
-      } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        if (data.user) await routeUserContext(data.user);
-      }
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      if (data.user) await routeUserContext(data.user);
     } catch (err) {
-      setErrorText(err.message || "Authentication rejected.");
+      setErrorText(err.message || "Invalid credentials.");
     }
   };
 
@@ -83,7 +76,7 @@ function Onboarding() {
     <div className="min-h-screen flex flex-col lg:flex-row font-sans bg-slate-50 relative">
       <div className="hidden lg:flex lg:w-5/12 bg-[#0B1120] text-white flex-col justify-between p-12 relative overflow-hidden shadow-2xl z-10">
         <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-[#C9A85E]/10 rounded-full blur-[100px]"></div>
-        <div className="relative z-10"><div onClick={() => navigate('/')} className="cursor-pointer inline-block hover:scale-105 transition-transform duration-300"><OROLearnLogo variant="stacked" size="small" theme="dark" /></div></div>
+        <div className="relative z-10"><div onClick={() => navigate('/')} className="cursor-pointer inline-block"><OROLearnLogo variant="stacked" size="small" theme="dark" /></div></div>
         <div className="relative z-10 mb-20 mt-12">
           <div className="inline-block px-4 py-1.5 rounded-full bg-[#C9A85E]/20 border border-[#C9A85E]/30 text-[#C9A85E] text-[10px] font-black uppercase tracking-[0.2em] mb-6">{role === 'educator' ? 'Educator Network' : 'Student Platform'}</div>
           <h1 className="text-4xl xl:text-5xl font-black leading-tight mb-6">{role === 'educator' ? <span>Shape the future of <br/><span className="text-[#C9A85E]">Indian Education.</span></span> : <span>Unlock your true <br/><span className="text-[#C9A85E]">Academic Potential.</span></span>}</h1>
@@ -93,8 +86,8 @@ function Onboarding() {
       <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-12 relative z-10">
         <button onClick={() => navigate('/')} className="absolute top-6 left-6 lg:left-12 text-sm font-bold text-gray-400 hover:text-[#C9A85E] flex items-center transition-colors"><span className="mr-2">←</span> Back Home</button>
         <div className="w-full max-w-md">
-          <h2 className="text-3xl font-black text-[#1a2a4e] mb-2">{isSignUp ? 'Create Account' : 'Welcome Back'}</h2>
-          <p className="text-gray-500 font-medium mb-6">Join ORO Learn gateway.</p>
+          <h2 className="text-3xl font-black text-[#1a2a4e] mb-2">Welcome Back</h2>
+          <p className="text-gray-500 font-medium mb-6">Access your workspace hub securely.</p>
 
           {errorText && <div className="mb-4 p-3 bg-red-50 text-red-600 border border-red-100 text-xs font-bold rounded-xl tracking-wide">{errorText}</div>}
 
@@ -105,15 +98,11 @@ function Onboarding() {
           </div>
 
           <div className="flex gap-3 mb-6">
-            <button type="button" onClick={() => handleOAuth('google')} className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 py-3 rounded-2xl font-bold shadow-sm hover:bg-gray-50 transition-all">
-              {Icons.google} Google
-            </button>
-            <button type="button" onClick={() => handleOAuth('azure')} className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 py-3 rounded-2xl font-bold shadow-sm hover:bg-gray-50 transition-all">
-              {Icons.microsoft} Microsoft
-            </button>
+            <button type="button" onClick={() => handleOAuth('google')} className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 py-3 rounded-2xl font-bold shadow-sm hover:bg-gray-50 transition-all">{Icons.google} Google</button>
+            <button type="button" onClick={() => handleOAuth('azure')} className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 py-3 rounded-2xl font-bold shadow-sm hover:bg-gray-50 transition-all">{Icons.microsoft} Microsoft</button>
           </div>
 
-          <div className="flex items-center my-6"><div className="flex-1 border-t border-gray-200"></div><span className="px-4 text-xs font-bold text-gray-400 uppercase tracking-widest">OR LOG IN WITH PASSWORD</span><div className="flex-1 border-t border-gray-200"></div></div>
+          <div className="flex items-center my-6"><div className="flex-1 border-t border-gray-200"></div><span className="px-4 text-xs font-bold text-gray-400 uppercase tracking-widest">OR SECURE LOGIN</span><div className="flex-1 border-t border-gray-200"></div></div>
 
           <form className="space-y-4" onSubmit={handleEmailSubmit}>
             <div className="flex bg-white rounded-2xl border border-gray-200 overflow-hidden focus-within:border-[#C9A85E] px-4 py-3.5 shadow-sm">
@@ -126,17 +115,8 @@ function Onboarding() {
               <input type="password" placeholder="••••••••" required minLength="6" className="w-full outline-none text-[#1a2a4e] font-bold" value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
 
-            <button type="submit" className="w-full bg-[#1a2a4e] text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-[#C9A85E] hover:text-[#1a2a4e] transition-all">
-              {isSignUp ? 'Complete Registration' : 'Sign In'}
-            </button>
+            <button type="submit" className="w-full bg-[#1a2a4e] text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-[#C9A85E] hover:text-[#1a2a4e] transition-all">Sign In</button>
           </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500 font-medium">
-              {isSignUp ? "Already have an account? " : "New to ORO Learn? "}
-              <button type="button" onClick={() => setIsSignUp(!isSignUp)} className="font-bold text-[#1a2a4e] hover:text-[#C9A85E]">{isSignUp ? 'Sign In' : 'Sign Up'}</button>
-            </p>
-          </div>
         </div>
       </div>
     </div>
