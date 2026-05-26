@@ -216,7 +216,10 @@ function StudentSetup() {
                   <div>
                     <label className="text-xs font-semibold mb-1 block">Educational Board</label>
                     <select required value={formData.board} onChange={e=>setFormData({...formData, board: e.target.value})} className="w-full px-4 py-2.5 border rounded-xl text-sm bg-white">
-                      <option value="">Select Board</option<option value="CBSE">CBSE</option><option value="ICSE">ICSE</option><option value="State">State Board</option>
+                      <option value="">Select Board</option>
+                      <option value="CBSE">CBSE</option>
+                      <option value="ICSE">ICSE</option>
+                      <option value="State">State Board</option>
                     </select>
                   </div>
                 ) : formData.baseLevel ? (
