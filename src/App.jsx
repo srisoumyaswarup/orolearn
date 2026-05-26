@@ -1,13 +1,13 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Landing from './pages/Landing';
-import Onboarding from './pages/Onboarding';
-import StudentSetup from './pages/StudentSetup';
-import EducatorSetup from './pages/EducatorSetup';
-import Dashboard from './pages/Dashboard';
-import EducatorDashboard from './pages/EducatorDashboard';
-import Home from './pages/Home';
-import Feed from './pages/Feed';
+import Landing from './Pages/Landing';
+import Onboarding from './Pages/Onboarding';
+import StudentSetup from './Pages/StudentSetup';
+import EducatorSetup from './Pages/EducatorSetup';
+import Dashboard from './Pages/Dashboard';
+import EducatorDashboard from './Pages/EducatorDashboard';
+import Home from './Pages/Home';
+import Feed from './Pages/Feed';
 
 function App() {
   return (
